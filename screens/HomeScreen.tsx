@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import Icon from 'react-native-vector-icons/FontAwesome5';
-import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, TouchableHighlight, Modal, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, TouchableHighlight, Modal, Pressable, Dimensions } from 'react-native';
 
 import React, { useEffect, useState } from 'react';
 
@@ -12,12 +12,23 @@ import { database } from '../firebase/firebase';
 import * as _ from 'lodash';
 import { Item } from 'react-native-paper/lib/typescript/components/List/List';
 import AdvertiseComponent from '../components/AdvertiseComponent';
+import Carousel from 'react-native-snap-carousel';
+import AddAdvertiseComponent from '../components/AddAdvertiseComponent';
 
 export default function HomeScreen({ navigation, route }: any) {
   const [modalVisible, setModalVisible] = useState(false);
   const [userInfo, setUserInfo] = useState({});
   const [selectedDiaperSizeCounter, setSelectedDiaperSizeCounter] = useState({});
   const [myAdvertises, setMyAdvertises] = useState([]);
+  const [advertiseModalVisible, setAdvertiseModalVisible] = useState(false);
+  const [selectedMyAdvertise, setSelectedMyAdvertise] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const screenWidth = Dimensions.get('window').width;
+  const sliderWidth = Math.round(screenWidth * 0.9);
+  const itemWidth = Math.round(sliderWidth * 0.75);
+  const itemHeight = Math.round(itemWidth * 3 / 4);
+
 
   const userData = React.useContext(NetworkContext);
 
@@ -66,11 +77,17 @@ export default function HomeScreen({ navigation, route }: any) {
         break;
     }
 
-
     await database.collection('user').doc(_.get(userInfo, 'id', '')).update(fieldToUpdate);
 
     console.log(diaperInfo);
     setModalVisible(false);
+  }
+
+  const deleteMyAdvertise = async (id: any) => {
+    setLoading(true);
+    await database.collection('advertises').doc(id).delete();
+    setAdvertiseModalVisible(false);
+    setLoading(false);
   }
 
   const diapers = [{'size': 'RN', 'qtd': _.get(userInfo, 'qtdDiaperRN', 0)}, {'size': 'RN+', 'qtd': _.get(userInfo, 'qtdDiaperRNPlus', 0)}, {'size': 'P', 'qtd': _.get(userInfo, 'qtdDiaperP', 0)}, {'size': 'M','qtd': _.get(userInfo, 'qtdDiaperM', 0)}, {'size': 'G', 'qtd': _.get(userInfo, 'qtdDiaperG', 0)}, {'size': 'XG', 'qtd': _.get(userInfo, 'qtdDiaperXG', 0)}, {'size': 'XXG', 'qtd': _.get(userInfo, 'qtdDiaperXXG', 0)}];
@@ -80,7 +97,7 @@ export default function HomeScreen({ navigation, route }: any) {
     database.collection('advertises').where('userId', '==', _.get(userData, 'userId', '')).onSnapshot((query: any) => {
       const list: any = [];
       query.forEach((doc: any) => {
-          list.push(doc.data());
+          list.push({...doc.data(), id: doc.id});
       });
       setMyAdvertises(list);
     });
@@ -114,6 +131,10 @@ export default function HomeScreen({ navigation, route }: any) {
       </View>
 
       <View style={styles.container}>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}><Text style={{color: '#A56AFF', fontWeight: 'bold'}}>Sair</Text></TouchableOpacity>
+      </View>
+
+      <View style={styles.container}>
         <View style={styles.infoBox}>
           <Text style={styles.title}>Minhas fraldas</Text>
           <Text style={{paddingVertical: 25, paddingHorizontal: 30, color: 'gray'}}>Mantenha seu estoque atualizado, selecione o tamanho e nos informe a quantidade de pacotes que possui.</Text>
@@ -139,13 +160,14 @@ export default function HomeScreen({ navigation, route }: any) {
           />
 
 
+          {/* UPDATE DIAPER PACKEGES MODAL */}
           <View style={styles.centeredView}>
           <Modal
             animationType="fade"
             transparent={true}
             visible={modalVisible}
             onRequestClose={() => {
-              alert("Modal has been closed.");
+              // alert("Modal has been closed.");
               setModalVisible(!modalVisible);
             }}
           >
@@ -183,6 +205,50 @@ export default function HomeScreen({ navigation, route }: any) {
           </Modal>
           </View>
 
+          
+          {/* DELETE ADVERTISE MODAL */}
+          <View style={styles.centeredView}>
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={advertiseModalVisible}
+            onRequestClose={() => {
+              // alert("Modal has been closed.");
+              setAdvertiseModalVisible(!advertiseModalVisible);
+            }}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text style={styles.title}>Detalhes do Anúncio</Text>
+                <Text style={styles.textInfo}>{`Fralda: ${_.get(selectedMyAdvertise, 'diaperBrand', '-')}`}</Text>
+                <Text style={styles.textInfo}>{`Modelo: ${_.get(selectedMyAdvertise, 'diaperModel', '-')}`}</Text>
+                <Text style={styles.textInfo}>{`Tamanho: ${_.get(selectedMyAdvertise, 'diaperSize', 'M')}`}</Text>
+                <Text style={styles.textInfo}>{`Fraldas por pacote: ${_.get(selectedMyAdvertise, 'numberOfdiapers', '-')}`}</Text>
+                <Text style={styles.textInfo}>{`Pacotes: ${_.get(selectedMyAdvertise, 'numberOfPackages', '-')}`}</Text>
+                <Text style={styles.textInfo}>{`Anunciante: ${_.get(selectedMyAdvertise, 'contactName', '-')}`}</Text>
+                <Text style={styles.textInfo}>{`Contato: ${_.get(selectedMyAdvertise, 'contactPhone', '-')}`}</Text>
+                <Text style={styles.textInfo}>{`Valor: ${_.get(selectedMyAdvertise, 'diaperFormatedValue', '-')}`}</Text>
+                <TouchableOpacity
+                  style={{...styles.actionButton, backgroundColor: 'red'}}
+                  onPress={() => deleteMyAdvertise(_.get(selectedMyAdvertise, 'id', ''))}
+                >
+                  {loading ? (
+                    <Image style={{height: 20, width: 20}} source={require('../assets/images/loadingGif.gif')}/>
+                  ) : (
+                    <Text style={styles.diaperItemTitle}>Excluir anúncio</Text>
+                  )}   
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.updatePerfilButton}
+                  onPress={() => setAdvertiseModalVisible(!advertiseModalVisible)}
+                >
+                  <Text>Fechar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          </View>
+
         </View>
 
         {/*<View style={styles.infoBox}>
@@ -196,27 +262,28 @@ export default function HomeScreen({ navigation, route }: any) {
         <View style={styles.infoBox}>
           <Text style={styles.title}>Meus Anúncios</Text>
           <View style={styles.container}>
-            {myAdvertises.length > 0 ? (
-              <FlatList
-              data={myAdvertises}
-              horizontal={true}
+            <Carousel
+              data={[...myAdvertises, {add: true}]}
+              sliderWidth={sliderWidth}
+              itemWidth={itemWidth}
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                return (
-                  <TouchableOpacity onPress={() => console.log('clicou')}>
-                    
+              renderItem={({ item }: any) => {
+                return !item.add ? (
+                  <TouchableOpacity onPress={() => {
+                    setAdvertiseModalVisible(true);
+                    setSelectedMyAdvertise(item)}}>
                     <AdvertiseComponent advertiseData={item}/>
-
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={() => {
+                    // setAdvertiseModalVisible(true);
+                    navigation.navigate("Anunciar")}}>
+                    <AddAdvertiseComponent />
                   </TouchableOpacity>
                 );
               }}
             />
-            ) : (
-              <Text style={styles.informativeText}>Você ainda não possui anúncios</Text>
-            )} 
             
-            <TouchableOpacity onPress={() => navigation.navigate("Anunciar")} style={styles.actionButton}><Text style={styles.diaperItemTitle}>Iniciar um novo anúncio</Text></TouchableOpacity>
           </View>
         </View>
 

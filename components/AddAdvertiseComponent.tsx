@@ -11,20 +11,7 @@ import { Text, View } from './Themed';
 import { diapers } from '../constants/Brands';
 import * as _ from 'lodash';
 
-export default function AdvertiseComponent({ advertiseData } : any) {
-
-    const {
-        diaperBrand,
-        diaperSize,
-        numberOfdiapers,
-        numberOfPackages,
-        diaperValue,
-        city,
-        contactName,
-        contactPhone,
-        diaperModel,
-        diaperFormatedValue
-    } = advertiseData;
+export default function AdvertiseComponent() {
 
     const getBrandImage = (brand: string) => {
         const selectedObjectBrand = _.find(diapers, ['name', brand]);
@@ -35,34 +22,17 @@ export default function AdvertiseComponent({ advertiseData } : any) {
     return (
       <View style={styles.container}>
         <View style={styles.infoBox}>
-        <View style={styles.profileImage}>
-                    <Image source={getBrandImage(diaperBrand)} style={styles.photo} resizeMode="center"></Image>
-                  </View>
+            {/*<View style={styles.profileImage}></View>*/}
             <View style={styles.detailsSection}>
-            <Text style={styles.textMain}>{diaperBrand}</Text>
-            {diaperModel !== '' && (
-              <Text style={{color: 'white'}}>{diaperModel}</Text>
-            )}
-            <Text style={{color: 'white'}}>{`${numberOfPackages} ${numberOfPackages > 1 ? 'pacotes' : 'pacote'} de ${numberOfdiapers} unidades`}</Text>
-          <Text style={{color: 'white'}}>{`Tamanho ${diaperSize}`}</Text>
-            <View style={{marginBottom: 15}}></View>
-            <Text style={styles.textMain}>{diaperFormatedValue}</Text>
-            <View style={styles.separator}></View>
-            <View style={styles.babyInfo}>
-              <Icon size={15} style={{ marginBottom: -3 }} name={"user"} color={"white"} />
-              <Text style={styles.textInfo}>{contactName}</Text>
-
-              <Icon size={15} style={{ marginBottom: -3 }} name={"phone"} color={"white"} />
-              <Text style={styles.textInfo}>{contactPhone}</Text>
-            </View>
-            <View style={styles.separator}></View>
-            <View style={styles.babyInfo}>
-              <Icon size={15} style={{ marginBottom: -3 }} name={"map-marker-alt"} color={"white"} />
-              <Text style={styles.textInfo}>{city}</Text>
-            </View>
+                <Text style={styles.textMain}>Iniciar novo anúncio</Text>
+                <Icon size={50} style={{ marginBottom: -3 }} name={"plus"} color={Colors.default.tint} />
+                <View style={styles.separator}></View>
+                <Text style={{color: '#969696'}}>Anunciando as fraldas que não servem em seu filho, além de ganhar dinheiro você ainda ajuda o meio ambiente diminuindo o desperdício. Experimente, é rápido e fácil.</Text>
+                <View style={styles.actionButton}>
+                    <Text style={styles.diaperItemTitle}>Anunciar</Text>
+                </View>
             </View>
         </View>
-          
       </View>
     );
   }
@@ -78,7 +48,7 @@ export default function AdvertiseComponent({ advertiseData } : any) {
         // width: '90%',
         borderRadius: 9,
         flex: 1,
-        //alignItems: 'center',
+        // alignItems: 'center',
         justifyContent: 'center',
         // borderWidth: 1,
         // borderColor: 'gray',
@@ -99,15 +69,16 @@ export default function AdvertiseComponent({ advertiseData } : any) {
 
     separator: {
       width: '100%',
-      backgroundColor: 'white',
+      backgroundColor: Colors.default.tint,
       height: 1,
-      marginVertical: 10
+      marginVertical: 20
     },
 
     textMain: {
         fontWeight: 'bold',
-        color: 'white',
-        fontSize: 20,
+        color: Colors.default.tint,
+        fontSize: 16,
+        margin: 20,
     },
     infoBox: {
       // flexDirection: 'row',
@@ -119,18 +90,19 @@ export default function AdvertiseComponent({ advertiseData } : any) {
       // paddingBottom: 20,
     },
     detailsSection: {
-        // alignItems: 'center',
+        alignItems: 'center',
         padding: 15,
-        borderBottomEndRadius: 9,
-        borderBottomLeftRadius: 9,
+        borderRadius: 9,
         //marginTop: 25,
-        backgroundColor: Colors.default.tint,
+        // backgroundColor: Colors.default.tint,
+        borderWidth: 2,
+        borderColor: Colors.default.tint,
         width: '100%',
-        //height: '100%',
+        height: '100%',
     },
     profileImage: {
         width: 120,
-        height: 120,
+        height: '20%',
         // alignItems: 'center',
         // borderRadius: 100,
         overflow: 'hidden',
@@ -140,5 +112,22 @@ export default function AdvertiseComponent({ advertiseData } : any) {
         flex: 1,
         width: undefined,
         height: undefined,
+      },
+      actionButton: {
+        width: '90%',
+        borderRadius: 9,
+        /// borderWidth: 1,
+        alignItems: 'center',
+        padding: 8,
+        // borderColor: '#A56AFF',
+        backgroundColor: '#A56AFF',
+        margin: 15,
+        // fontWeight: '500',
+      },
+      diaperItemTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        //marginTop: 20,
+        color: 'white',
       },
   });

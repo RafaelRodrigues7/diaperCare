@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { FlatList, StatusBar, Text, TouchableOpacity, View, Image, Modal, Picker } from "react-native";
+import React, { useEffect, useState } from "react";
+import { FlatList, StatusBar, Text, TouchableOpacity, View, Image, Modal, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ProgressSteps, ProgressStep } from 'react-native-progress-steps';
 import DropDownPicker from 'react-native-dropdown-picker';
 import * as _ from 'lodash';
+import { TextInputMask } from 'react-native-masked-text'
 // import { List } from 'react-native-paper'
 
 import styles from "./styles";
@@ -17,8 +18,8 @@ import { List } from "react-native-paper";
 import CurrencyInput from "react-native-currency-input";
 import AdvertiseComponent from "../../components/AdvertiseComponent";
 import { database } from "../../firebase/firebase";
-import { advertises } from "../findDiaperPage/constants";
 import { NetworkContext } from "../../reactContext";
+import ibgeApi from "../../services/ibgeApi";
 // import DropDownPicker from "react-native-dropdown-picker";
 
 const AdvertisePage: React.FC = ({ navigation }: any) => {
@@ -37,8 +38,21 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
   const [diaperValue, setDiaperValue] = React.useState(0.00); // can also be null
   const [diaperFormatedValue, setDiaperFormatedValue] = React.useState("R$ 0,00"); // can also be null
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [states, setStates] = useState([]);
+  const [selectedState, setSelectedState] = useState({});
+  const [cities, setCities] = useState([]);
+  const [selectedCity, setSelectedCity] = useState({});
+  const [formattedCity, setFormatedCity] =useState('');
+  const [firstStepCompleted, setFirstStepCompleted] = useState(false);
+  
 
   const userData = React.useContext(NetworkContext);
+
+  useEffect(() => {
+    getStates();
+  }, []);
 
   const selectDiaperBrand = (brand: string) => {
     setSelectedDiaperBrand(brand);
@@ -51,14 +65,68 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
     return selectedObjectBrand.uri;
   }
 
+  const getStates = async () => {
+    let stateList: any = [];
+    const response = await ibgeApi.get('/estados');
+    stateList = response.data;
+    // console.log(response.data);
+    stateList.sort((a: object, b: object) => {
+      if(a.nome < b.nome) {
+        return -1;
+      } else {
+        return true;
+      }
+    });
+    setStates(stateList);
+  }
+
+  const getCities = async (uf: number) => {
+    let citiesList: any = [];
+    const response = await ibgeApi.get(`estados/${uf}/distritos`);
+    citiesList = response.data;
+    citiesList.sort((a: object, b: object) => {
+      if(a.nome < b.nome) {
+        return -1;
+      } else {
+        return true;
+      }
+    });
+    setCities(citiesList);
+  }
+
+  const onSelectedState = (state: object) => {
+    let uf : object = {};
+    uf = state; 
+    setSelectedState(uf);
+    getCities(_.get(state, 'id'));
+    setSelectedCity({});
+    setModalVisible(false);
+    // _.forEach(cities, (item: any) => console.log(_.get(item, 'nome', '')));
+  }
+
+  const onSelectedCity = (city: object) => {
+    let item : object = {};
+    item = city;
+    setSelectedCity(item);
+    setCityModalVisible(false);
+    setFormatedCity(`${_.get(selectedCity, 'nome', '')}-${_.get(selectedState, 'sigla', '')}`);
+    
+    if (contactPhone.length > 14 && contactName !== '') {
+      setFirstStepCompleted(true);
+    } else{
+      setFirstStepCompleted(false);
+    }
+  }
+
   const addAdvertise = async (advertise: any) => {
 
-    // console.log(advertise.numberOfDiapers);
+    // Fix numberOfDiapers undefined issue
 
     setLoading(true);
 
     await database.collection('advertises').add({
-      city: "São Carlos",
+      city: advertise.city,
+      cityId: advertise.cityId,
       contactName: advertise.contactName,
       contactPhone: advertise.contactPhone,
       diaperBrand: advertise.diaperBrand,
@@ -67,7 +135,7 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
       diaperSize: advertise.diaperSize,
       diaperValue: advertise.diaperValue,
       numberOfPackages: advertise.numberOfPackages,
-      numberOfdiapers: 12,// advertise.numberOfDiapers,
+      numberOfdiapers: numberOfdiapers,
       userId: (_.get(userData, 'userId'))
     });
 
@@ -82,30 +150,135 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
   return (
 
     <View style={styles.container}>
+      <Modal
+       animationType="fade"
+       transparent={false}
+       visible={modalVisible}
+       onRequestClose={() => {
+         // alert("Modal has been closed.");
+         setModalVisible(!modalVisible);
+       }}
+     >
+       <>
+         <View style={styles.container}>
+           <Text style={styles.title}>Selecione seu estado</Text>
+           <View style={{width: '100%'}}>
+           <FlatList
+             data={states}
+             style={styles.brandList}
+             horizontal={false}
+             showsHorizontalScrollIndicator={false}
+             keyExtractor={(item) => item.id}
+             renderItem={({ item }) => {
+               return (
+                 <TouchableOpacity onPress={() => onSelectedState(item)}>
+                   <View style={styles.stateListStyle}>
+                     <Text>{item.nome}</Text>
+                   </View>
+                 </TouchableOpacity>
+               );
+             }}
+           />
+           </View>
+         </View>
+       </>
+     </Modal>
+
+      <Modal
+       animationType="fade"
+       transparent={false}
+       visible={cityModalVisible}
+       onRequestClose={() => {
+         // alert("Modal has been closed.");
+         setCityModalVisible(!cityModalVisible);
+       }}
+     >
+       <>
+         <View style={styles.container}>
+           <Text style={styles.title}>Selecione sua cidade</Text>
+           <View style={{width: '100%'}}>
+           <FlatList
+             data={cities}
+             style={styles.brandList}
+             horizontal={false}
+             showsHorizontalScrollIndicator={false}
+             keyExtractor={(item) => item.id}
+             renderItem={({ item }) => {
+               return (
+                 <TouchableOpacity onPress={() => onSelectedCity(item)}>
+                   <View style={styles.stateListStyle}>
+                     <Text>{item.nome}</Text>
+                   </View>
+                 </TouchableOpacity>
+               );
+             }}
+           />
+           </View>
+         </View>
+       </>
+     </Modal>
 
       <ProgressSteps
+        labelColor={'black'}
+        activeStep={0}
         activeStepIconBorderColor={'#A56AFF'}
         completedStepIconColor={'#A56AFF'}
         completedProgressBarColor={'#A56AFF'}>
         <ProgressStep 
+         nextBtnDisabled={!firstStepCompleted}
          nextBtnStyle={styles.nextBtnStyle} 
          nextBtnTextStyle={styles.nextBtnTextStyle}
+         onNext={() => setFormatedCity(`${_.get(selectedCity, 'nome', '')}-${_.get(selectedState, 'sigla', '')}`)}
          nextBtnText={'Seguir'}
          label="Contato">
             <View style={{ alignItems: 'center' }}>
               <Text style={styles.title}>Anuncie suas fraldas aqui!</Text>
               <View style={styles.infoBox}>
                 <Text style={styles.textInfo}>Gere dinheiro com as fraldas que não servem mais em seu filho e também evite disperdício</Text>
-                <Text style={styles.textInfo}>Para começar precisamos de um contato para que as pessoas interessada consiga te encontrar</Text>
-                <TextInput style={{borderWidth: 1, borderColor: '#dadada', borderRadius: 9, width: 210, height:50, padding: 10, margin: 16}}
+                <Text style={styles.textInfo}>Para começar precisamos de um contato para que as pessoas interessadas consigam te encontrar</Text>
+                <TextInput style={{borderWidth: 1, borderColor: '#dadada', borderRadius: 9, width: '90%', height:50, padding: 10, margin: 16}}
                  placeholder={'Seu nome'}
-                 onChangeText={(value) => setContactName(value)}
+                 onChangeText={(value) => {
+                  setContactName(value);
+                  if (contactName !== '' && contactPhone.length > 14 && selectedCity && selectedCity.nome) {
+                    setFirstStepCompleted(true);
+                  } else {
+                    setFirstStepCompleted(false);
+                  }
+                 }}
                 ></TextInput>
-                <TextInput style={{borderWidth: 1, borderColor: '#dadada', borderRadius: 9, width: 210, height:50, padding: 10, margin: 16}}
+                <TextInputMask 
+                 style={{borderWidth: 1, borderColor: '#dadada', borderRadius: 9, width: '90%', height:50, padding: 10, margin: 16}}
+                 type={'cel-phone'}
+                 value={contactPhone}
+                 options={{
+                  maskType: 'BRL',
+                  withDDD: true,
+                  dddMask: '(99) '
+                }}
                  placeholder={'Seu telefone'}
                  keyboardType="numeric"
-                 onChangeText={(value) => setContactPhone(value)}
-                ></TextInput>
+                 onChangeText={(value) => {
+                  setContactPhone(value);
+                  if (contactName !== '' && contactPhone.length > 14 && selectedCity && selectedCity.nome) {
+                    setFirstStepCompleted(true);
+                  } else {
+                    setFirstStepCompleted(false);
+                  }
+                 }}
+                ></TextInputMask>
+                <View style={{flexDirection: 'row', width: '90%', margin: 16}}>
+                  <TouchableOpacity style={{width: '20%', marginRight: '3%'}} onPress={() => setModalVisible(true)}>
+                    <Text style={{borderWidth: 1, borderColor: '#dadada', borderRadius: 9, height:50, padding: 15}}>
+                      {_.get(selectedState, 'sigla', 'UF')}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={{width: '77%'}} onPress={() => setCityModalVisible(true)}>
+                    <Text style={{borderWidth: 1, borderColor: '#dadada', borderRadius: 9, height:50, padding: 15}}>
+                      {_.get(selectedCity, 'nome', 'Cidade')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
         </ProgressStep>
@@ -173,6 +346,7 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
                       style={styles.brandList}
                       horizontal={true}
                       showsHorizontalScrollIndicator={false}
+                      keyExtractor={(item) => item}
                       renderItem={({ item }) => {
                         return (
                           <TouchableOpacity onPress={() => setSelectedDiaperSize(item)}>
@@ -265,6 +439,8 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
           finishBtnText={'Anunciar'}
           label="Confirmar"
           onSubmit={() => addAdvertise({
+            city: formattedCity,
+            cityId: _.get(selectedCity, 'id', 0),
             contactName,
             contactPhone,
             diaperBrand: selectedDiaperBrand,
@@ -276,13 +452,14 @@ const AdvertisePage: React.FC = ({ navigation }: any) => {
             numberOfPackages
           })}>
           <View style={{ alignItems: 'center' }}>
-            <Text style={styles.title}>Confirme seu anúncio</Text>
+            <Text style={{...styles.title, marginBottom: 25}}>Confirme seu anúncio</Text>
           
           <AdvertiseComponent advertiseData={
             {
+              city: formattedCity,
               diaperBrand: selectedDiaperBrand,
               diaperSize: selectedDiaperSize,
-              numberOfdiapers,
+              numberOfdiapers: numberOfdiapers,
               numberOfPackages,
               diaperValue,
               contactName,

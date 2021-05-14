@@ -42,6 +42,8 @@ const Login: React.FC<LoginComponentProps> = ({ navigation }) => {
       alert(`Erro de login: ${loginResponse.errorMessage}`);
     }
     
+    setEmail('');
+    setPassword('');
     setLoading(false);
 
   }
@@ -79,8 +81,8 @@ const Login: React.FC<LoginComponentProps> = ({ navigation }) => {
       <View style={style.container}>
         <StatusBar backgroundColor="black"/>
         <Text style={style.whiteTitle}>Bem vindo ao DiaperCare!</Text>
-        <Input placeholder="E-mail" placeholderTextColor="white" onChangeText={(value: string) => setEmail(value)}></Input>
-        <Input placeholder="Senha" secureTextEntry placeholderTextColor="white" onChangeText={(value: string) => setPassword(value)}></Input>
+        <Input value={email} placeholder="E-mail" placeholderTextColor="white" onChangeText={(value: string) => setEmail(value)}></Input>
+        <Input value={password} placeholder="Senha" secureTextEntry placeholderTextColor="white" onChangeText={(value: string) => setPassword(value)}></Input>
         <LoginButton onPress={() => handleLogin()}>
           {loading ? (
             <Image style={{height: 30, width: 30}} source={require('../../assets/images/loadingGif.gif')}/>
@@ -97,7 +99,7 @@ const Login: React.FC<LoginComponentProps> = ({ navigation }) => {
               transparent={false}
               visible={modalVisible}
               onRequestClose={() => {
-                alert("Modal has been closed.");
+                // alert("Modal has been closed.");
                 setModalVisible(!modalVisible);
               }}
             >

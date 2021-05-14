@@ -245,6 +245,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         fontWeight: 'bold',
         fontSize: 25,
+    },
+
+    stateListStyle: {
+      padding: 15,
+      borderBottomWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 1,
+      borderColor: '#969696',
+      width: '100%',
+      // marginBottom: 5,
     }
   
   });

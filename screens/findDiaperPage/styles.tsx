@@ -22,6 +22,7 @@ const styles = StyleSheet.create({
     },
     advertisesList: {
         width: '90%',
+        marginBottom: 130,
     },
     containerTitle: {
         flex: 1,
@@ -89,8 +90,8 @@ const styles = StyleSheet.create({
       width: 100,
       height: 100,
       backgroundColor: 'white',
-      // borderColor: '#dadada',
-      // borderWidth: 1,
+      borderColor: '#dadada',
+      borderWidth: 1,
       borderRadius: 9,
     },
     diaperSizeItemBox: {
@@ -184,6 +185,13 @@ const styles = StyleSheet.create({
       height: 1,
       width: '80%',
     },
+    separatorColored: {
+      marginVertical: 12,
+      height: 1,
+      width: '90%',
+      backgroundColor: '#a8a8a8',
+
+    },
     babyInfo: {
         flexDirection: "row",
         margin: 10
@@ -197,6 +205,25 @@ const styles = StyleSheet.create({
       borderColor: '#A56AFF',
       // margin: 10,
       // fontWeight: '500',
+    },
+
+    searchButtonWrapper: {
+      alignItems: 'center',
+      width: '90%',
+    },
+
+    searchText: {
+      fontWeight: 'bold',
+      color: 'black',
+      fontSize: 16,
+    },
+    
+    
+    searchButton: {
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: 'white',
+      borderRadius: 9,
     },
   
     actionButton: {
